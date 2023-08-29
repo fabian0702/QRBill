@@ -1,0 +1,7 @@
+{
+    "dialog" : true,
+    "IBAN" : "CH00000000000000000000",
+    "filePath" : "C../tmp",
+    "adress" : "Muster AG-Musterstrasse 30-1234 Musterstadt",
+    "logPath" : "C../out"
+}

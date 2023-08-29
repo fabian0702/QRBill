@@ -1,0 +1,141 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+    
+plugins {
+    id 'org.sonarqube' version '3.3'
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'jacoco'
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = 'net.codecrete.qrbill'
+version = '3.0.5'
+archivesBaseName = 'qrbill-generator'
+
+sourceCompatibility = 1.8
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': 'Swiss QR Bill Generator',
+            'Implementation-Version': archiveVersion,
+            'Implementation-Vendor': 'Manuel Bleichenbacher'
+        )
+
+    }
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+    reports {
+        junitXml.required = false
+        html.required = true
+    }               
+}
+
+javadoc {
+    include 'net/codecrete/qrbill/canvas/*'
+    include 'net/codecrete/qrbill/generator/*'
+
+    title = "QR Bill Generator ${version}"
+    options.addBooleanOption('html5', true)
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'qrbill-generator'
+            from components.java
+
+            pom {
+                name = 'Swiss QR Bill'
+                description = 'Java library for generating Swiss QR bills'
+                url = 'https://github.com/manuelbl/SwissQRBill'
+                licenses {
+                    license {
+                        name = 'The MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'manuelbl'
+                        name = 'Manuel Bleichenbacher'
+                        email = 'manuel.bleichenbacher@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/manuelbl/SwissQRBill.git'
+                    developerConnection = 'scm:git:ssh://github.com:manuelbl/SwissQRBill.git'
+                    url = 'https://github.com/manuelbl/SwissQRBill/tree/master'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releaseRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releaseRepoUrl
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = findProperty('ossrhUsername') ?: 'unknown'
+                password = findProperty('ossrhPassword') ?: 'unknown'
+            }
+        }
+    }
+}
+
+signing {
+    required { gradle.taskGraph.hasTask("publish") || gradle.taskGraph.hasTask("publishToMavenLocal") }
+    sign publishing.publications.mavenJava
+}
+
+sonarqube {
+    properties {
+        property 'sonar.projectName', 'Swiss QR Bill Generator (Java)'
+    }
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        html.required = false
+    }
+}
+
+project.tasks["sonarqube"].dependsOn "jacocoTestReport"
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    api 'org.apache.pdfbox:pdfbox:2.0.26'
+    implementation 'io.nayuki:qrcodegen:1.8.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+}
